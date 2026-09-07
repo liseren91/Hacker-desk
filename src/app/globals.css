@@ -1,0 +1,367 @@
+/* ── Phosphor terminal palette ─────────────────────────────────────────── */
+:root {
+  --bg: #0a0a0a;
+  --bg-panel: #0c0f0c;
+  --bg-input: #071007;
+
+  --phosphor: #33ff66;
+  --phosphor-bright: #00ff41;
+  --phosphor-dim: #1f7a3a;
+  --phosphor-faint: rgba(51, 255, 102, 0.28);
+  --phosphor-line: rgba(51, 255, 102, 0.18);
+
+  --alert: #ff5f56;
+  --alert-dim: rgba(255, 95, 86, 0.65);
+
+  --glow: 0 0 4px rgba(51, 255, 102, 0.45);
+  --glow-strong: 0 0 6px rgba(0, 255, 65, 0.7);
+
+  --mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", ui-monospace,
+    Menlo, Consolas, "DejaVu Sans Mono", monospace;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--phosphor);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.55;
+  text-shadow: var(--glow);
+  overflow: hidden;
+  /* A faint radial hotspot in the middle, like a tube that is brightest
+     where the beam spends most of its time. */
+  background-image: radial-gradient(
+    ellipse at 50% 40%,
+    rgba(51, 255, 102, 0.07) 0%,
+    rgba(10, 10, 10, 0) 62%
+  );
+}
+
+::selection {
+  background: var(--phosphor);
+  color: #041007;
+  text-shadow: none;
+}
+
+/* ── CRT overlay: scanlines + flicker, never intercepting clicks ───────── */
+.crt {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.crt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.22) 3px,
+    rgba(0, 0, 0, 0.22) 4px
+  );
+}
+
+.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  animation: flicker 5.5s infinite steps(1);
+}
+
+@keyframes flicker {
+  0%, 96% { opacity: 1; }
+  97% { opacity: 0.88; }
+  98% { opacity: 1; }
+  99% { opacity: 0.93; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt::after {
+    animation: none;
+  }
+}
+
+/* ── Terminal frame ────────────────────────────────────────────────────── */
+.screen {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: clamp(8px, 2vw, 20px);
+  gap: 10px;
+}
+
+.panel {
+  border: 1px solid var(--phosphor-line);
+  background: var(--bg-panel);
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+.header {
+  flex: 0 0 auto;
+  padding: 12px clamp(10px, 2.5vw, 18px);
+  overflow: hidden;
+}
+
+.logo {
+  font-size: clamp(5px, 1.72vw, 12px);
+  line-height: 1.05;
+  color: var(--phosphor-bright);
+  /* A tighter halo than body text — at this size a wide glow smears the art. */
+  text-shadow: 0 0 3px rgba(0, 255, 65, 0.5);
+  white-space: pre;
+  margin: 0;
+}
+
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--phosphor-line);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--phosphor-dim);
+}
+
+.header-meta strong {
+  color: var(--phosphor);
+  font-weight: 400;
+}
+
+/* ── Feed ──────────────────────────────────────────────────────────────── */
+.feed {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px clamp(10px, 2.5vw, 18px);
+  scrollbar-color: var(--phosphor-dim) transparent;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+
+.feed::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feed::-webkit-scrollbar-thumb {
+  background: var(--phosphor-dim);
+}
+
+.feed-empty {
+  color: var(--phosphor-dim);
+}
+
+.log-line {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 1px 0;
+}
+
+.log-line + .log-line {
+  margin-top: 2px;
+}
+
+.log-line time {
+  color: var(--phosphor-dim);
+}
+
+.log-line .nick {
+  color: var(--phosphor-bright);
+  text-shadow: var(--glow-strong);
+}
+
+.log-line.is-new {
+  animation: decode 420ms ease-out;
+}
+
+@keyframes decode {
+  from { opacity: 0.15; filter: blur(1px); }
+  to { opacity: 1; filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .log-line.is-new { animation: none; }
+}
+
+/* ── Status line ───────────────────────────────────────────────────────── */
+.status {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--phosphor-dim);
+  padding: 0 2px;
+  min-height: 17px;
+}
+
+.status[data-tone="alert"] {
+  color: var(--alert);
+  text-shadow: 0 0 4px var(--alert-dim);
+}
+
+.status[data-tone="live"] {
+  color: var(--phosphor);
+}
+
+/* ── Composer ──────────────────────────────────────────────────────────── */
+.composer {
+  flex: 0 0 auto;
+  padding: 10px clamp(10px, 2.5vw, 14px) 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.field label {
+  flex: 0 0 auto;
+  color: var(--phosphor-dim);
+  user-select: none;
+}
+
+.field input,
+.field textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--bg-input);
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--phosphor);
+  font: inherit;
+  text-shadow: inherit;
+  padding: 2px 4px;
+  caret-color: var(--phosphor-bright);
+  resize: none;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-bottom-color: var(--phosphor-line);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--phosphor-dim);
+  opacity: 0.75;
+}
+
+.field textarea {
+  line-height: 1.5;
+  max-height: 40vh;
+  /* The field grows with its content, so its own scrollbar is dead weight. */
+  overflow-y: hidden;
+}
+
+.composer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--phosphor-dim);
+  letter-spacing: 0.06em;
+}
+
+.counter[data-over="true"] {
+  color: var(--alert);
+}
+
+.transmit {
+  background: transparent;
+  border: 1px solid var(--phosphor-line);
+  color: var(--phosphor-bright);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-shadow: var(--glow-strong);
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.transmit:hover:not(:disabled),
+.transmit:focus-visible {
+  background: rgba(51, 255, 102, 0.12);
+  border-color: var(--phosphor);
+  outline: none;
+}
+
+.transmit:disabled {
+  color: var(--phosphor-dim);
+  border-color: rgba(51, 255, 102, 0.1);
+  text-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ── Blinking block cursor ─────────────────────────────────────────────── */
+.cursor {
+  display: inline-block;
+  color: var(--phosphor-bright);
+  animation: blink 1.05s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor { animation: none; }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Small screens ─────────────────────────────────────────────────────── */
+@media (max-width: 620px) {
+  body { font-size: 13px; }
+  .screen { gap: 8px; padding: 8px; }
+  .header { padding: 10px; }
+  .header-meta { font-size: 10px; }
+  .composer-bar { flex-wrap: wrap; }
+}

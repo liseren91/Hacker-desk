@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local database — the real one lives on the Railway volume.
+prisma/dev.db
+prisma/dev.db-journal
+*.db
+*.db-journal
+
+.env
+.env.local
+.DS_Store
